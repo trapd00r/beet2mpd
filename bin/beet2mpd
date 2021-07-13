@@ -1,0 +1,125 @@
+#!/usr/bin/perl
+# abstract: add results from a beet query to the mpd playlist
+# keep in mind that beet and mpd need to be in sync, or else:
+# {add} No such directory at /home/scp1/lib/perl5/Audio/MPD.pm line 156
+#   '--> error handling below
+
+use strict;
+use warnings FATAL => 'all';
+use utf8;
+use open qw(:std :utf8);
+
+use Encode;
+use Try::Tiny;
+use Audio::MPD;
+use IPC::Cmd qw(run);
+use File::LsColor qw(ls_color);
+use Term::ExtendedColor qw(fg bold underline);
+
+our $VERSION = '0.04';
+
+my $mpd = Audio::MPD->new;
+
+
+my $q = shift;
+
+# ask user for a query if it's not given on the commandline
+if(not defined($q)) {
+  printf "query: ";
+  chomp(my $answer = <STDIN>);
+  $q = $answer;
+}
+
+# make paths relative for mpd
+my @tracks = map { $_ =~ s|\Q$ENV{XDG_MUSIC_DIR}\E||; $_} beet_ls($q);
+
+printf "> adding %s songs matching query '%s'\n",
+  fg(208, bold(scalar @tracks)), fg(137, underline($q));
+
+for my $track(@tracks) {
+  try {
+    $mpd->playlist->add($track);
+  }
+  catch {
+    chomp $_;
+    $_ =~ m/No such directory/
+      and printf "W: No such directory: $ENV{XDG_MUSIC_DIR}%s\n",
+          ls_color($track);
+  }
+}
+
+
+sub beet_ls {
+  my $query = shift;
+
+  my $buffer;
+  my %info;
+
+  scalar run(
+    command => "beet ls '$query'",
+    verbose => 0,
+    buffer  => \$buffer,
+    timeout => 20,
+  );
+  my @results = split(/\n/, decode_utf8($buffer));
+  return @results;
+}
+
+=pod
+
+=head1 beet2mpd
+
+A bridge between beets and mpd. Lets you add songs to mpd using the
+advanced query syntax system of beets.
+
+=head1 SYNOPSIS
+
+    beet2mpd
+    beet2mpd comp:1
+    beet2mpd loved:1
+    beet2mpd genre:game
+    beet2mpd mbid_trackid::^$
+    beet2mpd label:'Masters of Hardcore'
+    beet2mpd year:2000..2004 ^genre:pop,rock,rap,hip-hop
+    beet2mpd comments:foo # do note the plural form!
+
+=head1 ENVIRONMENT
+
+B<${XDG_MUSIC_DIR}> should be set to the same directory as your library in
+I<beets/config.yaml>
+
+Keep in mind that beets and mpd should be in sync, or else:
+
+  {add} No such directory at /home/scp1/lib/perl5/Audio/MPD.pm line 156
+
+Though accounted for in the error handling, this will mean that some
+results from a given query won't be added to the playlist.
+
+=head1 INSTALLATION
+
+=head2 cpanminus
+
+    $ cd beet2mpd/
+    $ cpanm .
+
+=head2 Manual method
+
+    $ cd beet2mpd/
+    $ cpan Audio::MPD Term::ExtendedColor File::LsColor Try::Tiny
+    $ perl Makefile.PL
+    $ make
+    # make install
+
+
+=head1 AUTHOR
+
+  Magnus Woldrich
+  CPAN ID: WOLDRICH
+  m@japh.se
+  japh@irc.libera.chat
+  http://japh.se
+  http://github.com/trapd00r
+
+=head1 COPYRIGHT
+
+Copyright 2021 Magnus Woldrich
