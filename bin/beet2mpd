@@ -16,18 +16,20 @@ use IPC::Cmd qw(run);
 use File::LsColor qw(ls_color);
 use Term::ExtendedColor qw(fg bold underline);
 
-our $VERSION = '0.04';
+our $VERSION = '0.06';
 
 my $mpd = Audio::MPD->new;
 
 
-my $q = shift;
-
 # ask user for a query if it's not given on the commandline
-if(not defined($q)) {
+my $q = undef;
+if(!@ARGV) {
   printf "query: ";
   chomp(my $answer = <STDIN>);
   $q = $answer;
+}
+else {
+  $q = join(' ', @ARGV);
 }
 
 # make paths relative for mpd
@@ -56,7 +58,7 @@ sub beet_ls {
   my %info;
 
   scalar run(
-    command => "beet ls '$query'",
+    command => "beet ls $query",
     verbose => 0,
     buffer  => \$buffer,
     timeout => 20,
