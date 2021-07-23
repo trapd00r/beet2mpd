@@ -76,14 +76,21 @@ advanced query syntax system of beets.
 
 =head1 SYNOPSIS
 
-    beet2mpd
-    beet2mpd comp:1
-    beet2mpd loved:1
-    beet2mpd genre:game
-    beet2mpd mbid_trackid::^$
-    beet2mpd label:'Masters of Hardcore'
-    beet2mpd year:2000..2004 ^genre:pop,rock,rap,hip-hop
-    beet2mpd comments:foo # do note the plural form!
+    beet2mpd                             # add everything
+    beet2mpd comp:1                      # add compilations
+    beet2mpd loved:1                     # https://github.com/trapd00r/utils/blob/master/love
+    beet2mpd country:se                  # add music from sweden only
+    beet2mpd genre:game                  # add game music
+    beet2mpd mbid_trackid::^$            # add everything missing musicbrainz id
+    beet2mpd label:'Masters of Hardcore' # add everything from a record label
+    beet2mpd comments:foo                # do note the plural form!
+
+    # add music from year 2000-2004 that's NOT pop, rock, rap or hip-hop:
+    beet2mpd year:2000..2004 \^genre:pop,rock,rap,hip-hop
+
+    # add music from 1999 where album name contains love, but track
+    # titles does not:
+    beet2mpd  year:1999 album:love \^title:love
 
 =head1 ENVIRONMENT
 
