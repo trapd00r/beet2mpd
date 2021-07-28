@@ -43,7 +43,7 @@ results from a given query won't be added to the playlist.
 ## Manual method
 
     $ cd beet2mpd/
-    $ cpan Audio::MPD Term::ExtendedColor File::LsColor Try::Tiny
+    $ cpan Audio::MPD File::LsColor Try::Tiny
     $ perl Makefile.PL
     $ make
     # make install
