@@ -13,13 +13,20 @@ advanced query syntax system of beets.
     beet2mpd mbid_trackid::^$            # add everything missing musicbrainz id
     beet2mpd label:'Masters of Hardcore' # add everything from a record label
     beet2mpd comments:foo                # do note the plural form!
+    beet2mpd ^genre:rap albumtype:single # single releases that's NOT rap
+
+    # add official album releases
+    beet2mpd albumtype:album albumstatus:official
+
+    # add music released the day you were born
+    beet2mpd original_day:14 original_month:8 original_year:1990
 
     # add music from year 2000-2004 that's NOT pop, rock, rap or hip-hop:
-    beet2mpd year:2000..2004 \^genre:pop,rock,rap,hip-hop
+    beet2mpd year:2000..2004 ^genre:pop,rock,rap,hip-hop
 
     # add music from 1999 where album name contains love, but track
     # titles does not:
-    beet2mpd  year:1999 album:love \^title:love
+    beet2mpd  year:1999 album:love ^title:love
 
 # ENVIRONMENT
 
