@@ -84,6 +84,7 @@ advanced query syntax system of beets.
     beet2mpd label:'Masters of Hardcore' # add everything from a record label
     beet2mpd comments:foo                # do note the plural form!
     beet2mpd ^genre:rap albumtype:single # single releases that's NOT rap
+    beet2mpd added:-1w..                 # add new music imported in the past week
 
     # add official album releases
     beet2mpd albumtype:album albumstatus:official
