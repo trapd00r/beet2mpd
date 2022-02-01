@@ -29,6 +29,9 @@ advanced query syntax system of beets.
     # titles does not:
     beet2mpd  year:1999 album:love \^title:love
 
+    # add new music imported in the past hour
+    beet2mpd "added:$(date +%Y-%m-%dT%H:00:00..)"
+
 # ENVIRONMENT
 
 **${XDG\_MUSIC\_DIR}** should be set to the same directory as your library in
