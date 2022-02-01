@@ -99,8 +99,8 @@ advanced query syntax system of beets.
     # titles does not:
     beet2mpd  year:1999 album:love \^title:love
 
-    # add new music imported in the past hour
-    beet2mpd "added:$(date +%Y-%m-%dT%H:00:00..)"
+    # add new music imported in the past hour that doesn't have the tag radio
+    beet2mpd "added:$(date +%Y-%m-%dT%H:00:00..)" '^tag:radio'
 
 =head1 ENVIRONMENT
 
