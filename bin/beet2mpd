@@ -15,21 +15,24 @@ use Audio::MPD;
 use IPC::Cmd qw(run);
 use File::LsColor qw(ls_color);
 use Term::ExtendedColor qw(fg bold underline);
+use Pod::Usage;
 
-our $VERSION = '0.10';
+our $VERSION = '0.12';
 
 my $mpd = Audio::MPD->new;
 
-
-# ask user for a query if it's not given on the commandline
-my $q = undef;
-if(!@ARGV) {
-  printf "query: ";
-  chomp(my $answer = <STDIN>);
-  $q = $answer;
+my $q;
+if(@ARGV and $ARGV[0] =~ m/--?h(?:elp)?/ || ! @ARGV) {
+  # display the synopsis
+  pod2usage(verbose => 0);
+  exit;
+}
+elsif(@ARGV) {
+  $q = join(' ', @ARGV);
 }
 else {
-  $q = join(' ', @ARGV);
+  pod2usage(verbose => 0);
+  exit;
 }
 
 # make paths relative for mpd
@@ -85,6 +88,7 @@ advanced query syntax system of beets.
     beet2mpd comments:foo                # do note the plural form!
     beet2mpd ^genre:rap albumtype:single # single releases that's NOT rap
     beet2mpd added:-1w..                 # add new music imported in the past week
+    beet2mpd albumdisambig:explicit      # no censored lyrics
 
     # add official album releases
     beet2mpd albumtype:album albumstatus:official
