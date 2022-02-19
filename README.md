@@ -15,12 +15,16 @@ advanced query syntax system of beets.
     beet2mpd comments:foo                # do note the plural form!
     beet2mpd ^genre:rap albumtype:single # single releases that's NOT rap
     beet2mpd added:-1w..                 # add new music imported in the past week
+    beet2mpd albumdisambig:explicit      # no censored lyrics
 
     # add official album releases
     beet2mpd albumtype:album albumstatus:official
 
     # add music released the day you were born
     beet2mpd original_day:14 original_month:8 original_year:1990
+
+    # add music released this day in history
+    beet2mpd original_day:$(date +%d) original_month:$(date +%m)
 
     # add music from year 2000-2004 that's NOT pop, rock, rap or hip-hop:
     beet2mpd year:2000..2004 \^genre:pop,rock,rap,hip-hop
@@ -70,4 +74,4 @@ results from a given query won't be added to the playlist.
 
 # COPYRIGHT
 
-Copyright 2021 Magnus Woldrich
+Copyright 2021,2022 Magnus Woldrich
