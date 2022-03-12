@@ -4,69 +4,138 @@
 # {add} No such directory at /home/scp1/lib/perl5/Audio/MPD.pm line 156
 #   '--> error handling below
 
+our $VERSION = '0.20';
+
 use strict;
 use warnings FATAL => 'all';
 use utf8;
 use open qw(:std :utf8);
 
+use v5.30;
+
 use Encode;
 use Try::Tiny;
 use Audio::MPD;
 use IPC::Cmd qw(run);
-use File::LsColor qw(ls_color);
-use Term::ExtendedColor qw(fg bold underline);
+use File::LsColor;
+use Term::ExtendedColor qw(fg bold underline italic);
 use Pod::Usage;
+use Getopt::Long;
+Getopt::Long::Configure qw(bundling auto_version);
 
-our $VERSION = '0.12';
+use DateTime;
+
+use DDP;
+
+my $opt = {
+  verbose => 0,  # incrementable
+  add     => 1,  # binary, negatable
+  color   => 1,  # binary, negatable
+  query   => [], # array holding all the queries
+};
 
 my $mpd = Audio::MPD->new;
 
-my $q;
-if(@ARGV and $ARGV[0] =~ m/--?h(?:elp)?/ || ! @ARGV) {
-  # display the synopsis
-  pod2usage(verbose => 0);
-  exit;
-}
-elsif(@ARGV) {
-  $q = join(' ', @ARGV);
-}
-else {
-  pod2usage(verbose => 0);
-  exit;
-}
+GetOptions(
+  # Beets does not support hour time piece in a time query.
+  # We circumvent that by doing datetime math.
+  'hour=i' => sub {
+    my($option, $hours) = @_;
+    my $now  = DateTime->now;
+    my $past = DateTime->now;
+
+    # let's go way back
+    $past->subtract(hours => $hours);
+
+    # build up the query string for beets
+    push(@{ $opt->{query} }, sprintf("added:%s..%s", $past, $now));
+  },
+
+  # This handles what's not considering an option so we can continue building up
+  # more advanced beet queries.
+  #
+  # beet2mpd --hour 4 country:swe ^year:2008..2012
+  '<>'         => sub {
+    push(@{ $opt->{query} }, @_);
+  },
+
+  'add!'       => \$opt->{add},
+  'color!'     => \$opt->{color},
+
+  'v|verbose+' => \$opt->{verbose},
+  'help'       => \&usage,
+  'version'    => sub { printf "%s v%s\n", $0, $VERSION; exit },
+);
+
+usage() unless scalar @{ $opt->{query} };
 
 # make paths relative for mpd
-my @tracks = map { $_ =~ s|\Q$ENV{XDG_MUSIC_DIR}\E||; $_ } beet_ls($q);
+my @tracks = map { $_ =~ s|\Q$ENV{XDG_MUSIC_DIR}\E||; $_ } beet_ls($opt->{query});
 
-printf "> adding %s songs matching query '%s'\n",
-  fg(208, bold(scalar @tracks)), fg(137, underline($q));
+if(scalar(@tracks) == 0) {
+  say 'No results.';
+  exit;
+}
+
+#if($opt->{verbose}) {
+  printf("> %s%s songs matching query '%s'\n",
+    $opt->{add} ? 'Adding ' : '',
+    fg(208, bold(scalar @tracks)),
+    fg(137, bold(italic($opt->{query})))
+  );
+#}
 
 for my $track(@tracks) {
-  try {
-    $mpd->playlist->add($track);
+  if($opt->{add}) {
+    try {
+      $mpd->playlist->add($track);
+    }
+    catch {
+      if($opt->{verbose}) {
+        chomp $_;
+        $_ =~ m/No such directory/
+          and printf "W: No such directory: $ENV{XDG_MUSIC_DIR}%s\n",
+              ls_color($track);
+      }
+      else {
+        # ignore
+      }
+    }
   }
-  catch {
-    chomp $_;
-    $_ =~ m/No such directory/
-      and printf "W: No such directory: $ENV{XDG_MUSIC_DIR}%s\n",
-          ls_color($track);
+  else {
+    printf "%s\n", ls_color($track);
+    # simply print the results
   }
 }
 
+sub ls_color {
+  return $opt->{color}
+    ? File::LsColor::ls_color(@_) 
+    : @_;
+}
 
 sub beet_ls {
   my $query = shift;
+  if(ref($query) eq 'ARRAY') {
+    $query = join(' ', @{ $query });
+  }
 
   my $buffer;
 
   scalar run(
     command => "beet ls $query",
-    verbose => 0,
+    verbose => $opt->{verbose} > 1 ? $opt->{verbose} : 0,
     buffer  => \$buffer,
     timeout => 0,
   );
+  return unless $buffer;
   my @results = split(/\n/, decode_utf8($buffer));
   return @results;
+}
+
+sub usage {
+  pod2usage(verbose => $opt->{verbose} ? $opt->{verbose} : 1);
+  exit;
 }
 
 =pod
@@ -106,8 +175,25 @@ advanced query syntax system of beets.
     # titles does not:
     beet2mpd  year:1999 album:love \^title:love
 
-    # add new music imported in the past hour that doesn't have the tag radio
-    beet2mpd "added:$(date +%Y-%m-%dT%H:00:00..)" '^tag:radio'
+    # add new music imported in the past hour
+    beet2mpd --hour 1 -v
+
+    # make a query but don't add results to mpd; simply print the results
+    # for possible piping to other applications.
+    beet2mpd artist:lindfors --no-add --nocolor --hour 4 genre:pop
+
+=head1 OPTIONS
+
+  All boolean options are enabled with --option and yet again
+  disabled with --no-option. That is, you use the same option name but prefix
+  it with 'no-'.
+
+          --color  Enable or disable colorized output.
+          --add,   Add or print results from a query.
+          --hour   Add tracks added to beets n hour(s) ago.
+
+    -v,   --verbose   Increase the verbosity. Can be specified multiple times.
+    -h,   --help      Display this help and exit.
 
 =head1 ENVIRONMENT
 
@@ -116,7 +202,7 @@ I<beets/config.yaml>
 
 Keep in mind that beets and mpd should be in sync, or else:
 
-  {add} No such directory at /home/scp1/lib/perl5/Audio/MPD.pm line 156
+  {add} No such directory at Audio/MPD.pm line 156
 
 Though accounted for in the error handling, this will mean that some
 results from a given query won't be added to the playlist.
