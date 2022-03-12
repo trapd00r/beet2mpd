@@ -33,8 +33,25 @@ advanced query syntax system of beets.
     # titles does not:
     beet2mpd  year:1999 album:love \^title:love
 
-    # add new music imported in the past hour that doesn't have the tag radio
-    beet2mpd "added:$(date +%Y-%m-%dT%H:00:00..)" '^tag:radio'
+    # add new music imported in the past hour
+    beet2mpd --hour 1 -v
+
+    # make a query but don't add results to mpd; simply print the results
+    # for possible piping to other applications.
+    beet2mpd artist:lindfors --no-add --nocolor --hour 4 genre:pop
+
+# OPTIONS
+
+    All boolean options are enabled with --option and yet again
+    disabled with --no-option. That is, you use the same option name but prefix
+    it with 'no-'.
+
+            --color  Enable or disable colorized output.
+            --add,   Add or print results from a query.
+            --hour   Add tracks added to beets n hour(s) ago.
+
+      -v,   --verbose   Increase the verbosity. Can be specified multiple times.
+      -h,   --help      Display this help and exit.
 
 # ENVIRONMENT
 
@@ -43,7 +60,7 @@ _beets/config.yaml_
 
 Keep in mind that beets and mpd should be in sync, or else:
 
-    {add} No such directory at /home/scp1/lib/perl5/Audio/MPD.pm line 156
+    {add} No such directory at Audio/MPD.pm line 156
 
 Though accounted for in the error handling, this will mean that some
 results from a given query won't be added to the playlist.
