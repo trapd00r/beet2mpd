@@ -4,7 +4,7 @@
 # {add} No such directory at /home/scp1/lib/perl5/Audio/MPD.pm line 156
 #   '--> error handling below
 
-our $VERSION = '0.20';
+our $VERSION = '0.22';
 
 use strict;
 use warnings FATAL => 'all';
@@ -41,11 +41,9 @@ GetOptions(
   # We circumvent that by doing datetime math.
   'hour=i' => sub {
     my($option, $hours) = @_;
-    my $now  = DateTime->now;
-    my $past = DateTime->now;
-
+    my $now  = DateTime->now(time_zone => $ENV{TZ});
     # let's go way back
-    $past->subtract(hours => $hours);
+    my $past = $now->clone->subtract(hours => $hours);;
 
     # build up the query string for beets
     push(@{ $opt->{query} }, sprintf("added:%s..%s", $past, $now));
@@ -81,7 +79,7 @@ if(scalar(@tracks) == 0) {
   printf("> %s%s songs matching query '%s'\n",
     $opt->{add} ? 'Adding ' : '',
     fg(208, bold(scalar @tracks)),
-    fg(137, bold(italic($opt->{query})))
+    fg(137, bold(italic(join(' ', @{ $opt->{query} }))))
   );
 #}
 
@@ -104,7 +102,6 @@ for my $track(@tracks) {
   }
   else {
     printf "%s\n", ls_color($track);
-    # simply print the results
   }
 }
 
