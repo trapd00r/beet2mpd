@@ -4,7 +4,7 @@
 # {add} No such directory at /home/scp1/lib/perl5/Audio/MPD.pm line 156
 #   '--> error handling below
 
-our $VERSION = '0.22';
+our $VERSION = '0.24';
 
 use strict;
 use warnings FATAL => 'all';
@@ -39,8 +39,11 @@ my $mpd = Audio::MPD->new;
 GetOptions(
   # Beets does not support hour time piece in a time query.
   # We circumvent that by doing datetime math.
-  'hour=i' => sub {
+  'hour:i' => sub {
     my($option, $hours) = @_;
+
+    # if no argument provided, we'll default to 1 hour
+    $hours = 1 unless $hours;
     my $now  = DateTime->now(time_zone => $ENV{TZ});
     # let's go way back
     my $past = $now->clone->subtract(hours => $hours);;
