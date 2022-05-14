@@ -4,7 +4,7 @@
 # {add} No such directory at /home/scp1/lib/perl5/Audio/MPD.pm line 156
 #   '--> error handling below
 
-our $VERSION = '0.24';
+our $VERSION = '0.26';
 
 use strict;
 use warnings FATAL => 'all';
@@ -78,13 +78,15 @@ if(scalar(@tracks) == 0) {
   exit;
 }
 
-#if($opt->{verbose}) {
-  printf("> %s%s songs matching query '%s'\n",
-    $opt->{add} ? 'Adding ' : '',
-    fg(208, bold(scalar @tracks)),
-    fg(137, bold(italic(join(' ', @{ $opt->{query} }))))
-  );
-#}
+# print info msg to stderr so that pipe operations don't  include this data
+select STDERR;
+printf("> %s%s songs matching query '%s'\n",
+  $opt->{add} ? 'Adding ' : '',
+  scalar @tracks,
+  join(' ', @{ $opt->{query} })
+);
+
+select STDOUT;
 
 for my $track(@tracks) {
   if($opt->{add}) {
